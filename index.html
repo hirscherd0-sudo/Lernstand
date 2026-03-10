@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lernstandserhebung & Visualisierung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- DIDAKTISCHE SPRECHBLASEN --- */
+        .bubble-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .speech-bubble {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-size: 0.95rem;
+            line-height: 1.2;
+            text-wrap: balance;
+        }
+
+        .speech-bubble:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.15);
+        }
+
+        /* Das "Schwänzchen" der Sprechblase */
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 18px 15px 0;
+            border-style: solid;
+            display: block;
+            width: 0;
+        }
+
+        /* 1. Status: Noch nicht bearbeitet (Grau) */
+        .bubble-none {
+            background: #f3f4f6;
+            border: 3px solid #d1d5db;
+            color: #4b5563;
+        }
+        .bubble-none::after { border-color: #d1d5db transparent transparent; bottom: -20px; }
+
+        /* 2. Status: Unter 40% (Rot umrandet) */
+        .bubble-red {
+            background: #ffffff;
+            border: 5px solid #ef4444;
+            color: #b91c1c;
+            font-weight: 700;
+        }
+        .bubble-red::after { border-color: #ef4444 transparent transparent; bottom: -22px; }
+
+        /* 3. Status: 40% - 80% (Gelb gestreift) */
+        .bubble-yellow {
+            border: 5px solid #facc15;
+            color: #854d0e;
+            font-weight: 700;
+            background: repeating-linear-gradient(
+                45deg,
+                #fef08a,
+                #fef08a 12px,
+                #fde047 12px,
+                #fde047 24px
+            );
+        }
+        .bubble-yellow::after { border-color: #facc15 transparent transparent; bottom: -22px; }
+
+        /* 4. Status: Über 80% (Grün ausgemalt) */
+        .bubble-green {
+            background: #22c55e;
+            border: 5px solid #16a34a;
+            color: white;
+            font-weight: 700;
+        }
+        .bubble-green::after { border-color: #16a34a transparent transparent; bottom: -22px; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white shadow-md px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-graduation-cap text-2xl"></i>
+            <h1 class="text-xl font-bold tracking-wide">Lern-Tracker</h1>
+        </div>
+        <div id="nav-user-info" class="hidden flex items-center gap-4">
+            <span id="current-user-display" class="font-medium bg-indigo-700 px-3 py-1 rounded-full text-sm"></span>
+            <button onclick="app.logout()" class="hover:text-indigo-200 transition-colors text-sm">
+                <i class="fas fa-sign-out-alt mr-1"></i> Logout
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main id="app-container" class="max-w-5xl mx-auto p-6 mt-4">
+        <!-- Views werden hier durch JS injiziert -->
+    </main>
+
+    <!-- Message Box (Ersatz für alert) -->
+    <div id="message-box" class="fixed bottom-6 right-6 max-w-sm bg-white border-l-4 shadow-xl rounded p-4 hidden transform transition-all duration-300 translate-y-10 opacity-0 z-50">
+        <div class="flex items-start">
+            <div id="msg-icon" class="mt-0.5 mr-3"></div>
+            <div>
+                <h3 id="msg-title" class="font-bold text-sm"></h3>
+                <p id="msg-text" class="text-sm text-slate-600 mt-1"></p>
+            </div>
+            <button onclick="ui.hideMessage()" class="ml-auto text-slate-400 hover:text-slate-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. DATENSTRUKTUR & MOCK DATA ---
+        const defaultData = {
+            adminPass: "admin123", // Standard Admin-Passwort
+            students: [
+                { username: "max", password: "123" },
+                { username: "anna", password: "123" }
+            ],
+            themes: [
+                {
+                    id: "theme_1",
+                    name: "Bruchrechnung Einführung",
+                    competencies: [
+                        {
+                            id: "comp_1",
+                            name: "Brüche erkennen",
+                            tasks: [
+                                { q: "Wie nennt man die obere Zahl eines Bruchs?", a: "Zähler" },
+                                { q: "Wie nennt man die untere Zahl eines Bruchs?", a: "Nenner" }
+                            ]
+                        },
+                        {
+                            id: "comp_2",
+                            name: "Brüche erweitern",
+                            tasks: [
+                                { q: "Erweitere 1/2 mit 3. Ergebnis?", a: "3/6" },
+                                { q: "Erweitere 2/5 mit 2. Ergebnis?", a: "4/10" },
+                                { q: "Wird der Wert des Bruchs beim Erweitern größer? (Ja/Nein)", a: "Nein" }
+                            ]
+                        },
+                        {
+                            id: "comp_3",
+                            name: "Brüche kürzen",
+                            tasks: [
+                                { q: "Kürze 4/8 so weit wie möglich.", a: "1/2" },
+                                { q: "Mit welcher Zahl muss man 15/20 kürzen, um 3/4 zu erhalten?", a: "5" }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            results: {} // Struktur: { "max": { "theme_1": { "comp_1": { score: 100, attempts: 1 } } } }
+        };
+
+        // --- 2. STATE MANAGEMENT ---
+        const state = {
+            db: null,
+            currentUser: null, // { type: 'admin'|'student', username: '...' }
+            currentView: 'login', // login, admin, dashboard, competencies, quiz
+            activeThemeId: null,
+            activeCompId: null,
+            githubConfig: {
+                token: localStorage.getItem('gh_token') || '',
+                owner: localStorage.getItem('gh_owner') || '',
+                repo: localStorage.getItem('gh_repo') || '',
+                path: 'data.json',
+                sha: null
+            }
+        };
+
+        // --- 3. DATENBANK LOGIK (GITHUB & LOCAL) ---
+        const dbHelper = {
+            init: async () => {
+                ui.showMessage("Lade Daten...", "Bitte warten", "info");
+                if (state.githubConfig.token && state.githubConfig.owner && state.githubConfig.repo) {
+                    await dbHelper.loadFromGithub();
+                } else {
+                    dbHelper.loadLocal();
+                }
+            },
+            
+            // UTF-8 sicheres Base64
+            utf8_to_b64: (str) => window.btoa(unescape(encodeURIComponent(str))),
+            b64_to_utf8: (str) => decodeURIComponent(escape(window.atob(str))),
+
+            loadFromGithub: async () => {
+                const { token, owner, repo, path } = state.githubConfig;
+                try {
+                    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    
+                    if (res.status === 404) {
+                        // Datei existiert noch nicht auf Github, lege Standarddaten an
+                        state.db = JSON.parse(JSON.stringify(defaultData));
+                        await dbHelper.saveToGithub(true);
+                        ui.showMessage("Erfolg", "Neue Datenbank auf GitHub angelegt.", "success");
+                        return;
+                    }
+
+                    if (!res.ok) throw new Error("GitHub Fehler: " + res.statusText);
+                    
+                    const data = await res.json();
+                    state.githubConfig.sha = data.sha;
+                    const jsonString = dbHelper.b64_to_utf8(data.content);
+                    state.db = JSON.parse(jsonString);
+                    ui.showMessage("Erfolg", "Daten von GitHub geladen.", "success");
+                } catch (e) {
+                    console.error(e);
+                    ui.showMessage("Fehler", "Konnte nicht von GitHub laden. Nutze lokalen Speicher.", "error");
+                    dbHelper.loadLocal();
+                }
+            },
+
+            saveToGithub: async (isNew = false) => {
+                const { token, owner, repo, path, sha } = state.githubConfig;
+                if (!token || !owner || !repo) return dbHelper.saveLocal();
+
+                try {
+                    const content = dbHelper.utf8_to_b64(JSON.stringify(state.db, null, 2));
+                    const body = {
+                        message: "Auto-Update via Lern-Tracker App",
+                        content: content
+                    };
+                    if (!isNew && sha) body.sha = sha;
+
+                    const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (!res.ok) throw new Error("Speichern fehlgeschlagen");
+                    const data = await res.json();
+                    state.githubConfig.sha = data.content.sha; // Neuen SHA merken für nächstes Update
+                    ui.showMessage("Gespeichert", "Daten erfolgreich auf GitHub gesichert.", "success");
+                } catch (e) {
+                    console.error(e);
+                    ui.showMessage("Speicherfehler", "GitHub Update fehlgeschlagen. Lokal gesichert.", "warning");
+                    dbHelper.saveLocal();
+                }
+            },
+
+            loadLocal: () => {
+                const local = localStorage.getItem('lern_tracker_db');
+                if (local) {
+                    state.db = JSON.parse(local);
+                } else {
+                    state.db = JSON.parse(JSON.stringify(defaultData));
+                    dbHelper.saveLocal();
+                }
+                ui.hideMessage();
+            },
+
+            saveLocal: () => {
+                localStorage.setItem('lern_tracker_db', JSON.stringify(state.db));
+            }
+        };
+
+        // --- 4. UI HELPER ---
+        const ui = {
+            container: document.getElementById('app-container'),
+            navUser: document.getElementById('nav-user-info'),
+            userDisplay: document.getElementById('current-user-display'),
+            
+            render: (html) => {
+                ui.container.innerHTML = `<div class="fade-in">${html}</div>`;
+            },
+
+            updateNav: () => {
+                if (state.currentUser) {
+                    ui.navUser.classList.remove('hidden');
+                    const role = state.currentUser.type === 'admin' ? '<i class="fas fa-crown text-yellow-300 mr-1"></i> Admin' : `<i class="fas fa-user mr-1"></i> ${state.currentUser.username}`;
+                    ui.userDisplay.innerHTML = role;
+                } else {
+                    ui.navUser.classList.add('hidden');
+                }
+            },
+
+            showMessage: (title, text, type = 'info') => {
+                const box = document.getElementById('message-box');
+                document.getElementById('msg-title').innerText = title;
+                document.getElementById('msg-text').innerText = text;
+                
+                const icon = document.getElementById('msg-icon');
+                box.className = `fixed bottom-6 right-6 max-w-sm bg-white border-l-4 shadow-xl rounded p-4 transform transition-all duration-300 z-50 flex`;
+                
+                if (type === 'success') {
+                    box.classList.add('border-green-500');
+                    document.getElementById('msg-title').classList.add('text-green-700');
+                    icon.innerHTML = '<i class="fas fa-check-circle text-green-500 text-xl"></i>';
+                } else if (type === 'error') {
+                    box.classList.add('border-red-500');
+                    document.getElementById('msg-title').classList.add('text-red-700');
+                    icon.innerHTML = '<i class="fas fa-exclamation-circle text-red-500 text-xl"></i>';
+                } else if (type === 'warning') {
+                    box.classList.add('border-yellow-500');
+                    document.getElementById('msg-title').classList.add('text-yellow-700');
+                    icon.innerHTML = '<i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>';
+                } else {
+                    box.classList.add('border-blue-500');
+                    document.getElementById('msg-title').classList.add('text-blue-700');
+                    icon.innerHTML = '<i class="fas fa-info-circle text-blue-500 text-xl"></i>';
+                }
+
+                // Einblenden
+                setTimeout(() => {
+                    box.classList.remove('translate-y-10', 'opacity-0');
+                }, 10);
+
+                // Auto hide
+                if(window.msgTimeout) clearTimeout(window.msgTimeout);
+                window.msgTimeout = setTimeout(ui.hideMessage, 4000);
+            },
+
+            hideMessage: () => {
+                const box = document.getElementById('message-box');
+                box.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => box.classList.add('hidden'), 300);
+            }
+        };
+
+        // --- 5. APP LOGIK & VIEWS ---
+        const app = {
+            start: async () => {
+                await dbHelper.init();
+                app.showLogin();
+            },
+
+            // --- LOGIN ---
+            showLogin: () => {
+                state.currentUser = null;
+                ui.updateNav();
+                ui.render(`
+                    <div class="max-w-md mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200 mt-10">
+                        <h2 class="text-2xl font-bold text-center text-slate-800 mb-6">Willkommen</h2>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-lg font-semibold text-slate-700 mb-3 border-b pb-2">Schüler Login</h3>
+                            <input type="text" id="login-user" placeholder="Benutzername" class="w-full p-3 border rounded mb-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <input type="password" id="login-pass" placeholder="Passwort" class="w-full p-3 border rounded mb-3 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <button onclick="app.loginStudent()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded hover:bg-indigo-700 transition">Einloggen</button>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h3 class="text-sm font-semibold text-slate-600 mb-2">Lehrkraft / Admin</h3>
+                            <div class="flex gap-2">
+                                <input type="password" id="admin-pass" placeholder="Admin-Passwort" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-slate-400 outline-none">
+                                <button onclick="app.loginAdmin()" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700 transition">Login</button>
+                            </div>
+                            <p class="text-xs text-slate-400 mt-2">Standard: admin123</p>
+                        </div>
+                    </div>
+                `);
+            },
+
+            loginStudent: () => {
+                const u = document.getElementById('login-user').value.trim().toLowerCase();
+                const p = document.getElementById('login-pass').value;
+                const student = state.db.students.find(s => s.username.toLowerCase() === u && s.password === p);
+                
+                if (student) {
+                    state.currentUser = { type: 'student', username: student.username };
+                    ui.updateNav();
+                    app.showDashboard();
+                    ui.showMessage("Erfolgreich", `Willkommen, ${student.username}!`, "success");
+                } else {
+                    ui.showMessage("Fehler", "Falscher Benutzername oder Passwort.", "error");
+                }
+            },
+
+            loginAdmin: () => {
+                const p = document.getElementById('admin-pass').value;
+                if (p === state.db.adminPass) {
+                    state.currentUser = { type: 'admin', username: 'Admin' };
+                    ui.updateNav();
+                    app.showAdmin();
+                } else {
+                    ui.showMessage("Fehler", "Falsches Admin-Passwort.", "error");
+                }
+            },
+
+            logout: () => {
+                app.showLogin();
+            },
+
+            // --- ADMIN VIEW ---
+            showAdmin: () => {
+                if (state.currentUser?.type !== 'admin') return app.showLogin();
+
+                let studentsHTML = state.db.students.map(s => 
+                    `<div class="flex justify-between items-center bg-white p-3 border rounded mb-2">
+                        <span><i class="fas fa-user text-slate-400 mr-2"></i> <b>${s.username}</b> (PW: ${s.password})</span>
+                        <button onclick="app.deleteStudent('${s.username}')" class="text-red-500 hover:text-red-700 p-2"><i class="fas fa-trash"></i></button>
+                    </div>`
+                ).join('');
+
+                let themesHTML = state.db.themes.map(t => 
+                    `<div class="bg-white p-4 border rounded mb-3 border-l-4 border-l-indigo-500">
+                        <h4 class="font-bold text-lg flex justify-between">
+                            ${t.name}
+                            <button onclick="app.deleteTheme('${t.id}')" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash"></i> Sequenz löschen</button>
+                        </h4>
+                        <p class="text-sm text-slate-500 mb-2">${t.competencies.length} Kompetenzen</p>
+                        <button onclick="app.addCompetencyPrompt('${t.id}')" class="text-indigo-600 text-sm font-semibold mt-2"><i class="fas fa-plus"></i> Kompetenz hinzufügen</button>
+                    </div>`
+                ).join('');
+
+                ui.render(`
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Linke Spalte: Schüler -->
+                        <div class="bg-slate-100 p-6 rounded-xl border border-slate-200">
+                            <h2 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-users mr-2"></i> Schüler-Logins</h2>
+                            <div class="mb-4 flex gap-2">
+                                <input type="text" id="new-stud-name" placeholder="Name" class="w-1/2 p-2 border rounded outline-none">
+                                <input type="text" id="new-stud-pass" placeholder="Passwort" class="w-1/2 p-2 border rounded outline-none">
+                                <button onclick="app.addStudent()" class="bg-green-600 text-white px-4 rounded hover:bg-green-700"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto pr-2">
+                                ${studentsHTML || '<p class="text-slate-500 text-sm">Keine Schüler angelegt.</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Rechte Spalte: Themen/Sequenzen -->
+                        <div class="bg-slate-100 p-6 rounded-xl border border-slate-200">
+                            <h2 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-book mr-2"></i> Sequenzen & Aufgaben</h2>
+                            <div class="mb-4 flex gap-2">
+                                <input type="text" id="new-theme-name" placeholder="Neue Sequenz (z.B. Geometrie)" class="flex-1 p-2 border rounded outline-none">
+                                <button onclick="app.addTheme()" class="bg-indigo-600 text-white px-4 rounded hover:bg-indigo-700"><i class="fas fa-plus"></i> Erstellen</button>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto pr-2">
+                                ${themesHTML || '<p class="text-slate-500 text-sm">Keine Sequenzen angelegt.</p>'}
+                            </div>
+                        </div>
+
+                        <!-- Unten: GitHub Settings -->
+                        <div class="col-span-1 md:col-span-2 bg-slate-800 text-slate-100 p-6 rounded-xl shadow-inner mt-4">
+                            <h2 class="text-xl font-bold mb-4"><i class="fab fa-github mr-2"></i> Cloud Speicher (GitHub API)</h2>
+                            <p class="text-sm text-slate-400 mb-4">Verbinde ein GitHub Repository, um die Daten dauerhaft zu speichern. Bleiben die Felder leer, wird nur lokal im Browser gespeichert.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Personal Access Token (PAT)</label>
+                                    <input type="password" id="gh-token" value="${state.githubConfig.token}" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Repository Owner (Username)</label>
+                                    <input type="text" id="gh-owner" value="${state.githubConfig.owner}" placeholder="z.B. maxmustermann" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1">Repository Name</label>
+                                    <input type="text" id="gh-repo" value="${state.githubConfig.repo}" placeholder="z.B. lern-tracker-data" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                </div>
+                            </div>
+                            <button onclick="app.saveGithubConfig()" class="bg-indigo-500 text-white px-6 py-2 rounded font-bold hover:bg-indigo-600 transition shadow">Verbindung speichern & Testen</button>
+                        </div>
+                    </div>
+                `);
+            },
+
+            addStudent: async () => {
+                const n = document.getElementById('new-stud-name').value.trim();
+                const p = document.getElementById('new-stud-pass').value.trim();
+                if (!n || !p) return ui.showMessage("Fehler", "Bitte Name und Passwort eingeben", "error");
+                if (state.db.students.find(s => s.username === n)) return ui.showMessage("Fehler", "Benutzername existiert bereits", "error");
+                
+                state.db.students.push({ username: n, password: p });
+                await dbHelper.saveToGithub();
+                app.showAdmin();
+            },
+
+            deleteStudent: async (username) => {
+                state.db.students = state.db.students.filter(s => s.username !== username);
+                await dbHelper.saveToGithub();
+                app.showAdmin();
+            },
+
+            addTheme: async () => {
+                const n = document.getElementById('new-theme-name').value.trim();
+                if (!n) return;
+                state.db.themes.push({
+                    id: 'theme_' + Date.now(),
+                    name: n,
+                    competencies: []
+                });
+                await dbHelper.saveToGithub();
+                app.showAdmin();
+            },
+
+            deleteTheme: async (id) => {
+                state.db.themes = state.db.themes.filter(t => t.id !== id);
+                await dbHelper.saveToGithub();
+                app.showAdmin();
+            },
+
+            addCompetencyPrompt: async (themeId) => {
+                // In einer echten App wäre das ein Modal, hier der Einfachheit halber per Prompt
+                const compName = prompt("Name der neuen Kompetenz (Sprechblase):");
+                if (!compName) return;
+                
+                const theme = state.db.themes.find(t => t.id === themeId);
+                const newComp = { id: 'comp_' + Date.now(), name: compName, tasks: [] };
+                
+                // Direkt eine Aufgabe abfragen
+                const q = prompt(`Erste Aufgabe für "${compName}":\nFrage:`);
+                if(q) {
+                    const a = prompt(`Lösung für "${q}":`);
+                    if(a) newComp.tasks.push({ q, a });
+                }
+
+                theme.competencies.push(newComp);
+                await dbHelper.saveToGithub();
+                app.showAdmin();
+                ui.showMessage("Gespeichert", "Kompetenz wurde hinzugefügt.", "success");
+            },
+
+            saveGithubConfig: async () => {
+                const token = document.getElementById('gh-token').value.trim();
+                const owner = document.getElementById('gh-owner').value.trim();
+                const repo = document.getElementById('gh-repo').value.trim();
+                
+                localStorage.setItem('gh_token', token);
+                localStorage.setItem('gh_owner', owner);
+                localStorage.setItem('gh_repo', repo);
+                
+                state.githubConfig.token = token;
+                state.githubConfig.owner = owner;
+                state.githubConfig.repo = repo;
+
+                if (token && owner && repo) {
+                    ui.showMessage("Verbinde...", "Prüfe GitHub Verbindung", "info");
+                    await dbHelper.loadFromGithub(); // Test load
+                } else {
+                    ui.showMessage("Info", "Lokaler Speichermodus aktiv.", "info");
+                }
+            },
+
+
+            // --- STUDENT VIEWS ---
+            showDashboard: () => {
+                if (state.currentUser?.type !== 'student') return app.showLogin();
+
+                let themesHTML = state.db.themes.map(t => `
+                    <div onclick="app.showCompetencies('${t.id}')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all group">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <i class="fas fa-layer-group text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800">${t.name}</h3>
+                                <p class="text-slate-500 text-sm mt-1">${t.competencies.length} Kompetenzen</p>
+                            </div>
+                            <div class="ml-auto text-slate-300 group-hover:text-indigo-500">
+                                <i class="fas fa-chevron-right text-xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                ui.render(`
+                    <div class="mb-8">
+                        <h2 class="text-3xl font-extrabold text-slate-800">Hallo ${state.currentUser.username}! 👋</h2>
+                        <p class="text-slate-600 mt-2 text-lg">Wähle eine Lern-Sequenz aus, um zu starten.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${themesHTML || '<p>Es wurden noch keine Sequenzen vom Lehrer angelegt.</p>'}
+                    </div>
+                `);
+            },
+
+            showCompetencies: (themeId) => {
+                state.activeThemeId = themeId;
+                const theme = state.db.themes.find(t => t.id === themeId);
+                const userResults = state.db.results[state.currentUser.username]?.[themeId] || {};
+
+                let bubblesHTML = theme.competencies.map(c => {
+                    const result = userResults[c.id];
+                    let statusClass = 'bubble-none'; // Default
+                    
+                    if (result && result.attempts > 0) {
+                        if (result.score < 40) statusClass = 'bubble-red';
+                        else if (result.score >= 40 && result.score < 80) statusClass = 'bubble-yellow';
+                        else if (result.score >= 80) statusClass = 'bubble-green';
+                    }
+
+                    return `
+                        <div onclick="app.startQuiz('${c.id}')" class="speech-bubble ${statusClass}" title="Klicken um Aufgaben zu starten">
+                            <span>${c.name}</span>
+                        </div>
+                    `;
+                }).join('');
+
+                ui.render(`
+                    <div class="mb-6 flex items-center">
+                        <button onclick="app.showDashboard()" class="text-slate-500 hover:text-indigo-600 mr-4 transition"><i class="fas fa-arrow-left text-xl"></i></button>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">${theme.name}</h2>
+                            <p class="text-sm text-slate-500">Wähle eine Kompetenzblase, um Aufgaben zu bearbeiten.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Didaktische Legende -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex gap-6 justify-center mb-10 text-sm">
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-gray-200 border-2 border-gray-300"></div> Neu</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-white border-2 border-red-500"></div> Unter 40%</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full border-2 border-yellow-400" style="background: repeating-linear-gradient(45deg, #fef08a, #fef08a 4px, #fde047 4px, #fde047 8px);"></div> 40% - 80%</div>
+                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-green-500 border-2 border-green-600"></div> Über 80%</div>
+                    </div>
+
+                    <div class="bubble-container mt-8">
+                        ${bubblesHTML || '<p class="text-center w-full text-slate-500">Keine Kompetenzen hinterlegt.</p>'}
+                    </div>
+                `);
+            },
+
+            startQuiz: (compId) => {
+                state.activeCompId = compId;
+                const theme = state.db.themes.find(t => t.id === state.activeThemeId);
+                const comp = theme.competencies.find(c => c.id === compId);
+
+                if (!comp.tasks || comp.tasks.length === 0) {
+                    return ui.showMessage("Hinweis", "Für diese Kompetenz sind noch keine Aufgaben hinterlegt.", "info");
+                }
+
+                let tasksHTML = comp.tasks.map((task, index) => `
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
+                        <p class="font-semibold text-lg text-slate-800 mb-4"><span class="text-indigo-500 mr-2">Aufgabe ${index + 1}:</span> ${task.q}</p>
+                        <input type="text" id="answer_${index}" class="w-full p-3 border-2 border-slate-100 rounded-lg focus:border-indigo-400 focus:ring-0 outline-none transition" placeholder="Deine Antwort...">
+                    </div>
+                `).join('');
+
+                ui.render(`
+                    <div class="mb-6 flex items-center">
+                        <button onclick="app.showCompetencies('${state.activeThemeId}')" class="text-slate-500 hover:text-indigo-600 mr-4 transition"><i class="fas fa-times text-xl"></i> Abbrechen</button>
+                        <h2 class="text-2xl font-bold text-slate-800">Aufgaben: ${comp.name}</h2>
+                    </div>
+
+                    <div class="max-w-2xl mx-auto">
+                        ${tasksHTML}
+                        <button onclick="app.evaluateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg mt-4">
+                            <i class="fas fa-check-circle mr-2"></i> Antworten Auswerten
+                        </button>
+                    </div>
+                `);
+            },
+
+            evaluateQuiz: async () => {
+                const theme = state.db.themes.find(t => t.id === state.activeThemeId);
+                const comp = theme.competencies.find(c => c.id === state.activeCompId);
+                
+                let correctCount = 0;
+                
+                // Antworten prüfen
+                comp.tasks.forEach((task, index) => {
+                    const input = document.getElementById(`answer_${index}`).value.trim().toLowerCase();
+                    const correctAns = task.a.trim().toLowerCase();
+                    if (input === correctAns) {
+                        correctCount++;
+                    }
+                });
+
+                const percentage = Math.round((correctCount / comp.tasks.length) * 100);
+
+                // Datenstruktur für Ergebnisse initialisieren falls nötig
+                const user = state.currentUser.username;
+                if (!state.db.results[user]) state.db.results[user] = {};
+                if (!state.db.results[user][state.activeThemeId]) state.db.results[user][state.activeThemeId] = {};
+                
+                const currentResult = state.db.results[user][state.activeThemeId][state.activeCompId] || { attempts: 0, score: 0 };
+                
+                // Ergebnis speichern
+                state.db.results[user][state.activeThemeId][state.activeCompId] = {
+                    score: percentage, // Wir speichern den neusten Wert (Lernzuwachs!)
+                    attempts: currentResult.attempts + 1
+                };
+
+                // Speichern (Lokal + GitHub)
+                await dbHelper.saveToGithub();
+
+                // Feedback UI
+                let feedbackMsg = "";
+                let type = "info";
+                if (percentage >= 80) { feedbackMsg = "Hervorragend! Blase ist jetzt grün!"; type = "success"; }
+                else if (percentage >= 40) { feedbackMsg = "Gute Arbeit, aber da geht noch was! Gelb gestreift."; type = "warning"; }
+                else { feedbackMsg = "Noch etwas Übung nötig! Die Blase ist rot umrandet."; type = "error"; }
+
+                ui.showMessage(`${percentage}% Richtig`, feedbackMsg, type);
+                
+                // Zurück zur Kompetenz-Ansicht um den Farbwechsel zu sehen
+                setTimeout(() => {
+                    app.showCompetencies(state.activeThemeId);
+                }, 1500);
+            }
+        };
+
+        // --- INIT ---
+        window.onload = app.start;
+
+    </script>
+</body>
+</html>
