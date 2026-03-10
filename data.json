@@ -1,0 +1,68 @@
+{
+  "adminPass": "admin123",
+  "students": [
+    {
+      "username": "max",
+      "password": "123"
+    },
+    {
+      "username": "anna",
+      "password": "123"
+    }
+  ],
+  "themes": [
+    {
+      "id": "theme_1",
+      "name": "Bruchrechnung Einführung",
+      "competencies": [
+        {
+          "id": "comp_1",
+          "name": "Brüche erkennen",
+          "tasks": [
+            {
+              "q": "Wie nennt man die obere Zahl eines Bruchs?",
+              "a": "Zähler"
+            },
+            {
+              "q": "Wie nennt man die untere Zahl eines Bruchs?",
+              "a": "Nenner"
+            }
+          ]
+        },
+        {
+          "id": "comp_2",
+          "name": "Brüche erweitern",
+          "tasks": [
+            {
+              "q": "Erweitere 1/2 mit 3. Ergebnis?",
+              "a": "3/6"
+            },
+            {
+              "q": "Erweitere 2/5 mit 2. Ergebnis?",
+              "a": "4/10"
+            },
+            {
+              "q": "Wird der Wert des Bruchs beim Erweitern größer? (Ja/Nein)",
+              "a": "Nein"
+            }
+          ]
+        },
+        {
+          "id": "comp_3",
+          "name": "Brüche kürzen",
+          "tasks": [
+            {
+              "q": "Kürze 4/8 so weit wie möglich.",
+              "a": "1/2"
+            },
+            {
+              "q": "Mit welcher Zahl muss man 15/20 kürzen, um 3/4 zu erhalten?",
+              "a": "5"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "results": {}
+}
