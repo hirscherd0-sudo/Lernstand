@@ -52,46 +52,45 @@
             width: 0;
         }
 
-        /* 1. Status: Noch nicht bearbeitet (Grau) */
-        .bubble-none {
-            background: #f3f4f6;
-            border: 3px solid #d1d5db;
-            color: #4b5563;
-        }
-        .bubble-none::after { border-color: #d1d5db transparent transparent; bottom: -20px; }
+        /* --- NEU: BORDERS (Erster Versuch / Vorwissen) --- */
+        .border-none { border: 3px solid #d1d5db; }
+        .border-none::after { border-color: #d1d5db transparent transparent; bottom: -20px; }
 
-        /* 2. Status: Unter 40% (Rot umrandet) */
-        .bubble-red {
-            background: #ffffff;
-            border: 5px solid #ef4444;
-            color: #b91c1c;
-            font-weight: 700;
-        }
-        .bubble-red::after { border-color: #ef4444 transparent transparent; bottom: -22px; }
+        .border-red { border: 5px solid #ef4444; }
+        .border-red::after { border-color: #ef4444 transparent transparent; bottom: -22px; }
 
-        /* 3. Status: 40% - 80% (Gelb gestreift) */
-        .bubble-yellow {
-            border: 5px solid #facc15;
-            color: #854d0e;
-            font-weight: 700;
-            background: repeating-linear-gradient(
+        .border-yellow { border: 5px solid #facc15; }
+        .border-yellow::after { border-color: #facc15 transparent transparent; bottom: -22px; }
+
+        .border-green { border: 5px solid #16a34a; }
+        .border-green::after { border-color: #16a34a transparent transparent; bottom: -22px; }
+
+        /* --- NEU: FILLS (Aktueller Versuch / Lernstand) --- */
+        .fill-none { background-color: #f3f4f6; color: #4b5563; }
+        
+        .bg-state-red { background-color: #ffffff; color: #b91c1c; font-weight: 700; }
+        
+        .bg-state-yellow {
+            background-color: #fef08a; /* Helles Gelb als Basis */
+            color: #854d0e; font-weight: 700;
+        }
+        
+        .bg-state-green { 
+            background-color: #22c55e; 
+            color: white; font-weight: 700; 
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Für bessere Lesbarkeit auf Streifen */
+        }
+
+        /* --- NEU: STREIFEN (Jemals im 40-80% Bereich gewesen) --- */
+        .with-stripes {
+            background-image: repeating-linear-gradient(
                 45deg,
-                #fef08a,
-                #fef08a 12px,
-                #fde047 12px,
-                #fde047 24px
+                transparent,
+                transparent 12px,
+                rgba(253, 224, 71, 0.9) 12px, /* Tailwind fde047 mit leichter Transparenz */
+                rgba(253, 224, 71, 0.9) 24px
             );
         }
-        .bubble-yellow::after { border-color: #facc15 transparent transparent; bottom: -22px; }
-
-        /* 4. Status: Über 80% (Grün ausgemalt) */
-        .bubble-green {
-            background: #22c55e;
-            border: 5px solid #16a34a;
-            color: white;
-            font-weight: 700;
-        }
-        .bubble-green::after { border-color: #16a34a transparent transparent; bottom: -22px; }
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
@@ -103,13 +102,17 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800 flex flex-col">
 
     <!-- Navbar -->
     <nav class="bg-indigo-600 text-white shadow-md px-6 py-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
-            <i class="fas fa-graduation-cap text-2xl"></i>
-            <h1 class="text-xl font-bold tracking-wide">Lern-Tracker</h1>
+            <img src="https://logo.clearbit.com/osz-elbe-elster.de" onerror="this.style.display='none'; document.getElementById('fallback-icon').style.display='block';" class="h-8 bg-white rounded p-1" alt="OSZ Logo">
+            <i id="fallback-icon" class="fas fa-graduation-cap text-2xl" style="display: none;"></i>
+            <h1 class="text-xl font-bold tracking-wide flex items-baseline gap-2">
+                Lern-Tracker
+                <span class="text-indigo-200 text-sm font-normal hidden sm:inline">| OSZ Elbe-Elster</span>
+            </h1>
         </div>
         <div id="nav-user-info" class="hidden flex items-center gap-4">
             <span id="current-user-display" class="font-medium bg-indigo-700 px-3 py-1 rounded-full text-sm"></span>
@@ -120,9 +123,14 @@
     </nav>
 
     <!-- Main Container -->
-    <main id="app-container" class="max-w-5xl mx-auto p-6 mt-4">
+    <main id="app-container" class="max-w-5xl mx-auto p-6 mt-4 flex-grow w-full">
         <!-- Views werden hier durch JS injiziert -->
     </main>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-6 text-center text-xs text-slate-400 font-light">
+        &copy; Dominik Hirscher | OSZ Elbe-Elster
+    </footer>
 
     <!-- Message Box (Ersatz für alert) -->
     <div id="message-box" class="fixed bottom-6 right-6 max-w-sm bg-white border-l-4 shadow-xl rounded p-4 hidden transform transition-all duration-300 translate-y-10 opacity-0 z-50">
@@ -378,7 +386,6 @@
                                 <input type="password" id="admin-pass" placeholder="Admin-Passwort" class="w-full p-2 border rounded text-sm focus:ring-2 focus:ring-slate-400 outline-none">
                                 <button onclick="app.loginAdmin()" class="bg-slate-800 text-white px-4 py-2 rounded text-sm hover:bg-slate-700 transition">Login</button>
                             </div>
-                            <p class="text-xs text-slate-400 mt-2">Standard: admin123</p>
                         </div>
                     </div>
                 `);
@@ -605,16 +612,30 @@
 
                 let bubblesHTML = theme.competencies.map(c => {
                     const result = userResults[c.id];
-                    let statusClass = 'bubble-none'; // Default
+                    let borderClass = 'border-none';
+                    let bgClass = 'fill-none';
+                    let stripeClass = '';
                     
                     if (result && result.attempts > 0) {
-                        if (result.score < 40) statusClass = 'bubble-red';
-                        else if (result.score >= 40 && result.score < 80) statusClass = 'bubble-yellow';
-                        else if (result.score >= 80) statusClass = 'bubble-green';
+                        // 1. Umrandung basiert auf dem ERSTEN Versuch (Vorwissen)
+                        let initialScore = (result.history && result.history.length > 0) ? result.history[0] : result.score;
+                        if (initialScore < 40) borderClass = 'border-red';
+                        else if (initialScore >= 40 && initialScore < 80) borderClass = 'border-yellow';
+                        else borderClass = 'border-green';
+
+                        // 2. Streifen: Gab es JEMALS einen Versuch zwischen 40% und 80%? (Der Lernweg)
+                        let historyArray = result.history || [result.score];
+                        let hasIntermediate = historyArray.some(s => s >= 40 && s < 80);
+                        if (hasIntermediate) stripeClass = 'with-stripes';
+
+                        // 3. Füllung (Hintergrundfarbe) basiert auf dem AKTUELLEN (letzten) Versuch
+                        if (result.score < 40) bgClass = 'bg-state-red';
+                        else if (result.score >= 40 && result.score < 80) bgClass = 'bg-state-yellow';
+                        else bgClass = 'bg-state-green';
                     }
 
                     return `
-                        <div onclick="app.startQuiz('${c.id}')" class="speech-bubble ${statusClass}" title="Klicken um Aufgaben zu starten">
+                        <div onclick="app.startQuiz('${c.id}')" class="speech-bubble ${borderClass} ${bgClass} ${stripeClass}" title="Klicken um Aufgaben zu starten">
                             <span>${c.name}</span>
                         </div>
                     `;
@@ -629,15 +650,44 @@
                         </div>
                     </div>
                     
-                    <!-- Didaktische Legende -->
-                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 flex gap-6 justify-center mb-10 text-sm">
-                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-gray-200 border-2 border-gray-300"></div> Neu</div>
-                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-white border-2 border-red-500"></div> Unter 40%</div>
-                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full border-2 border-yellow-400" style="background: repeating-linear-gradient(45deg, #fef08a, #fef08a 4px, #fde047 4px, #fde047 8px);"></div> 40% - 80%</div>
-                        <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-green-500 border-2 border-green-600"></div> Über 80%</div>
+                    <!-- Didaktische Legende NEU (3-Teilig) -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 mb-10 text-sm">
+                        <p class="text-center font-bold text-slate-700 mb-3 border-b pb-2">Wie liest man die Sprechblasen?</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            
+                            <!-- Spalte 1: Vorwissen -->
+                            <div class="flex flex-col items-center gap-1">
+                                <span class="font-semibold text-slate-500 text-xs">UMRANDUNG (Vorwissen)</span>
+                                <span class="text-[10px] text-slate-400">Erster Versuch</span>
+                                <div class="flex flex-col gap-1 mt-1 text-xs text-left">
+                                    <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full border-2 border-red-500"></div> &lt; 40%</div>
+                                    <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full border-2 border-yellow-400"></div> 40-80%</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Spalte 2: Lernweg -->
+                            <div class="flex flex-col items-center gap-1 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0">
+                                <span class="font-semibold text-slate-500 text-xs">STREIFEN (Lernweg)</span>
+                                <span class="text-[10px] text-slate-400">Zwischenschritt erreicht</span>
+                                <div class="flex flex-col gap-1 mt-1 text-xs text-left">
+                                    <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full border border-slate-300" style="background: repeating-linear-gradient(45deg, transparent, transparent 4px, #fde047 4px, #fde047 8px);"></div> War mal 40-80%</div>
+                                </div>
+                            </div>
+
+                            <!-- Spalte 3: Aktuell -->
+                            <div class="flex flex-col items-center gap-1 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0">
+                                <span class="font-semibold text-slate-500 text-xs">FÜLLUNG (Aktuell)</span>
+                                <span class="text-[10px] text-slate-400">Letzter Versuch</span>
+                                <div class="flex flex-col gap-1 mt-1 text-xs text-left">
+                                    <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-white border border-slate-300"></div> &lt; 40%</div>
+                                    <div class="flex items-center gap-2"><div class="w-4 h-4 rounded-full bg-green-500 border border-slate-300"></div> &gt; 80%</div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
-                    <div class="bubble-container mt-8">
+                    <div class="bubble-container mt-4">
                         ${bubblesHTML || '<p class="text-center w-full text-slate-500">Keine Kompetenzen hinterlegt.</p>'}
                     </div>
                 `);
@@ -696,13 +746,19 @@
                 if (!state.db.results[user]) state.db.results[user] = {};
                 if (!state.db.results[user][state.activeThemeId]) state.db.results[user][state.activeThemeId] = {};
                 
-                const currentResult = state.db.results[user][state.activeThemeId][state.activeCompId] || { attempts: 0, score: 0 };
+                const currentResult = state.db.results[user][state.activeThemeId][state.activeCompId] || { attempts: 0, score: 0, history: [] };
                 
-                // Ergebnis speichern
-                state.db.results[user][state.activeThemeId][state.activeCompId] = {
-                    score: percentage, // Wir speichern den neusten Wert (Lernzuwachs!)
-                    attempts: currentResult.attempts + 1
-                };
+                // Rückwärtskompatibilität: Falls es alte Daten gibt, bei denen 'history' noch nicht existierte
+                if (!currentResult.history) {
+                    currentResult.history = currentResult.attempts > 0 ? [currentResult.score] : [];
+                }
+
+                // Ergebnis speichern (Verlauf aktualisieren)
+                currentResult.history.push(percentage);
+                currentResult.score = percentage; // Aktuellsten Score merken
+                currentResult.attempts += 1;
+                
+                state.db.results[user][state.activeThemeId][state.activeCompId] = currentResult;
 
                 // Speichern (Lokal + GitHub)
                 await dbHelper.saveToGithub();
@@ -710,9 +766,9 @@
                 // Feedback UI
                 let feedbackMsg = "";
                 let type = "info";
-                if (percentage >= 80) { feedbackMsg = "Hervorragend! Blase ist jetzt grün!"; type = "success"; }
+                if (percentage >= 80) { feedbackMsg = "Hervorragend! Die Füllung ist jetzt grün!"; type = "success"; }
                 else if (percentage >= 40) { feedbackMsg = "Gute Arbeit, aber da geht noch was! Gelb gestreift."; type = "warning"; }
-                else { feedbackMsg = "Noch etwas Übung nötig! Die Blase ist rot umrandet."; type = "error"; }
+                else { feedbackMsg = "Noch etwas Übung nötig! Die Füllung bleibt weiß."; type = "error"; }
 
                 ui.showMessage(`${percentage}% Richtig`, feedbackMsg, type);
                 
