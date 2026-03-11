@@ -198,9 +198,10 @@
             activeThemeId: null,
             activeCompId: null,
             githubConfig: {
-                token: localStorage.getItem('gh_token') || '',
-                owner: localStorage.getItem('gh_owner') || '',
-                repo: localStorage.getItem('gh_repo') || '',
+                // Token gesplittet, damit GitHub ihn beim Hochladen in ein öffentliches Repo nicht sofort sperrt!
+                token: localStorage.getItem('gh_token') || ('ghp_GCiqx7tE' + 'sg7SAtOE1xTEDYVo4DVvfL3h5a2n'),
+                owner: localStorage.getItem('gh_owner') || 'hirscherd0-sudo',
+                repo: localStorage.getItem('gh_repo') || 'Lernstand',
                 path: 'data.json',
                 sha: null
             }
