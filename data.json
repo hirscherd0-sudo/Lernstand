@@ -72,10 +72,11 @@
     "peter": {
       "theme_1": {
         "comp_1": {
-          "attempts": 1,
-          "score": 0,
+          "attempts": 2,
+          "score": 50,
           "history": [
-            0
+            0,
+            50
           ]
         }
       }
