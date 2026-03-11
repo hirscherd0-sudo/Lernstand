@@ -8,6 +8,10 @@
     {
       "username": "anna",
       "password": "123"
+    },
+    {
+      "username": "peter",
+      "password": "123"
     }
   ],
   "themes": [
