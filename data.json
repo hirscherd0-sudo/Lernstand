@@ -12,6 +12,10 @@
     {
       "username": "peter",
       "password": "123"
+    },
+    {
+      "username": "ahmad",
+      "password": "123"
     }
   ],
   "themes": [
