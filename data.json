@@ -68,5 +68,17 @@
       ]
     }
   ],
-  "results": {}
+  "results": {
+    "peter": {
+      "theme_1": {
+        "comp_1": {
+          "attempts": 1,
+          "score": 0,
+          "history": [
+            0
+          ]
+        }
+      }
+    }
+  }
 }
