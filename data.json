@@ -89,11 +89,12 @@
     "max": {
       "theme_1": {
         "comp_1": {
-          "attempts": 2,
-          "score": 50,
+          "attempts": 3,
+          "score": 100,
           "history": [
             0,
-            50
+            50,
+            100
           ]
         }
       }
