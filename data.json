@@ -82,6 +82,17 @@
             {
               "q": "head of department",
               "a": "Abteilungsleiter"
+            },
+            {
+              "id": "t_1787161453918",
+              "type": "mc",
+              "q": "Verwaltung",
+              "a": "Administration",
+              "options": [
+                "General",
+                "Secretariat",
+                "Administration"
+              ]
             }
           ]
         },
