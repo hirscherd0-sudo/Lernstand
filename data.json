@@ -93,6 +93,12 @@
                 "Secretariat",
                 "Administration"
               ]
+            },
+            {
+              "id": "t_1787161546879",
+              "type": "text",
+              "q": "Übersetze: Klassenleiter",
+              "a": "Class teacher"
             }
           ]
         },
