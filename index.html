@@ -52,7 +52,7 @@
             width: 0;
         }
 
-        /* --- NEU: BORDERS (Erster Versuch / Vorwissen) --- */
+        /* --- BORDERS (Erster Versuch / Vorwissen) --- */
         .border-none { border: 3px solid #d1d5db; }
         .border-none::after { border-color: #d1d5db transparent transparent; bottom: -20px; }
 
@@ -65,34 +65,34 @@
         .border-green { border: 5px solid #16a34a; }
         .border-green::after { border-color: #16a34a transparent transparent; bottom: -22px; }
 
-        /* --- NEU: FILLS (Aktueller Versuch / Lernstand) --- */
+        /* --- FILLS (Aktueller Versuch / Lernstand) --- */
         .fill-none { background-color: #f3f4f6; color: #4b5563; }
         
         .bg-state-red { background-color: #ffffff; color: #b91c1c; font-weight: 700; }
         
         .bg-state-yellow {
-            background-color: #fef08a; /* Helles Gelb als Basis */
+            background-color: #fef08a;
             color: #854d0e; font-weight: 700;
         }
         
         .bg-state-green { 
             background-color: #22c55e; 
             color: white; font-weight: 700; 
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5); /* Für bessere Lesbarkeit auf Streifen */
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }
 
-        /* --- NEU: STREIFEN (Jemals im 40-80% Bereich gewesen) --- */
+        /* --- STREIFEN (Jemals im 40-80% Bereich gewesen) --- */
         .with-stripes {
             background-image: repeating-linear-gradient(
                 45deg,
                 transparent,
                 transparent 12px,
-                rgba(253, 224, 71, 0.9) 12px, /* Tailwind fde047 mit leichter Transparenz */
+                rgba(253, 224, 71, 0.9) 12px,
                 rgba(253, 224, 71, 0.9) 24px
             );
         }
 
-        /* Custom Scrollbar */
+        /* Custom Scrollbar & Animationen */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -163,42 +163,32 @@
                             id: "comp_1",
                             name: "Brüche erkennen",
                             tasks: [
-                                { q: "Wie nennt man die obere Zahl eines Bruchs?", a: "Zähler" },
-                                { q: "Wie nennt man die untere Zahl eines Bruchs?", a: "Nenner" }
+                                { id: "t1", type: "text", q: "Wie nennt man die obere Zahl eines Bruchs?", a: "Zähler" },
+                                { id: "t2", type: "mc", q: "Was stellt der Nenner dar?", options: ["Das Ganze", "Den Teil", "Das Doppelte"], a: "Das Ganze" }
                             ]
                         },
                         {
                             id: "comp_2",
                             name: "Brüche erweitern",
                             tasks: [
-                                { q: "Erweitere 1/2 mit 3. Ergebnis?", a: "3/6" },
-                                { q: "Erweitere 2/5 mit 2. Ergebnis?", a: "4/10" },
-                                { q: "Wird der Wert des Bruchs beim Erweitern größer? (Ja/Nein)", a: "Nein" }
-                            ]
-                        },
-                        {
-                            id: "comp_3",
-                            name: "Brüche kürzen",
-                            tasks: [
-                                { q: "Kürze 4/8 so weit wie möglich.", a: "1/2" },
-                                { q: "Mit welcher Zahl muss man 15/20 kürzen, um 3/4 zu erhalten?", a: "5" }
+                                { id: "t3", type: "text", q: "Erweitere 1/2 mit 3. Ergebnis?", a: "3/6" },
+                                { id: "t4", type: "mc", q: "Wird der Wert des Bruchs beim Erweitern größer?", options: ["Ja", "Nein", "Nur bei geraden Zahlen"], a: "Nein" }
                             ]
                         }
                     ]
                 }
             ],
-            results: {} // Struktur: { "max": { "theme_1": { "comp_1": { score: 100, attempts: 1 } } } }
+            results: {} // Struktur: { "max": { "theme_1": { "comp_1": { score: 100, attempts: 1, history: [0, 50, 100] } } } }
         };
 
         // --- 2. STATE MANAGEMENT ---
         const state = {
             db: null,
-            currentUser: null, // { type: 'admin'|'student', username: '...' }
-            currentView: 'login', // login, admin, dashboard, competencies, quiz
+            currentUser: null,
+            currentView: 'login',
             activeThemeId: null,
             activeCompId: null,
             githubConfig: {
-                // Token gesplittet, damit GitHub ihn beim Hochladen in ein öffentliches Repo nicht sofort sperrt!
                 token: localStorage.getItem('gh_token') || ('ghp_GCiqx7tE' + 'sg7SAtOE1xTEDYVo4DVvfL3h5a2n'),
                 owner: localStorage.getItem('gh_owner') || 'hirscherd0-sudo',
                 repo: localStorage.getItem('gh_repo') || 'Lernstand',
@@ -218,7 +208,6 @@
                 }
             },
             
-            // UTF-8 sicheres Base64
             utf8_to_b64: (str) => window.btoa(unescape(encodeURIComponent(str))),
             b64_to_utf8: (str) => decodeURIComponent(escape(window.atob(str))),
 
@@ -230,7 +219,6 @@
                     });
                     
                     if (res.status === 404) {
-                        // Datei existiert noch nicht auf Github, lege Standarddaten an
                         state.db = JSON.parse(JSON.stringify(defaultData));
                         await dbHelper.saveToGithub(true);
                         ui.showMessage("Erfolg", "Neue Datenbank auf GitHub angelegt.", "success");
@@ -271,7 +259,7 @@
 
                     if (!res.ok) throw new Error("Speichern fehlgeschlagen");
                     const data = await res.json();
-                    state.githubConfig.sha = data.content.sha; // Neuen SHA merken für nächstes Update
+                    state.githubConfig.sha = data.content.sha;
                     ui.showMessage("Gespeichert", "Daten erfolgreich auf GitHub gesichert.", "success");
                 } catch (e) {
                     console.error(e);
@@ -342,12 +330,10 @@
                     icon.innerHTML = '<i class="fas fa-info-circle text-blue-500 text-xl"></i>';
                 }
 
-                // Einblenden
                 setTimeout(() => {
                     box.classList.remove('translate-y-10', 'opacity-0');
                 }, 10);
 
-                // Auto hide
                 if(window.msgTimeout) clearTimeout(window.msgTimeout);
                 window.msgTimeout = setTimeout(ui.hideMessage, 4000);
             },
@@ -424,7 +410,7 @@
 
             // --- ADMIN VIEW ---
             showAdmin: () => {
-                if (state.currentUser?.type !== 'admin') return app.showLogin();
+                if (!state.currentUser || state.currentUser.type !== 'admin') return app.showLogin();
 
                 let studentsHTML = state.db.students.map(s => 
                     `<div class="flex justify-between items-center bg-white p-3 border rounded mb-2">
@@ -434,13 +420,12 @@
                 ).join('');
 
                 let themesHTML = state.db.themes.map(t => 
-                    `<div class="bg-white p-4 border rounded mb-3 border-l-4 border-l-indigo-500">
-                        <h4 class="font-bold text-lg flex justify-between">
-                            ${t.name}
-                            <button onclick="app.deleteTheme('${t.id}')" class="text-red-400 hover:text-red-600 text-sm"><i class="fas fa-trash"></i> Sequenz löschen</button>
-                        </h4>
-                        <p class="text-sm text-slate-500 mb-2">${t.competencies.length} Kompetenzen</p>
-                        <button onclick="app.addCompetencyPrompt('${t.id}')" class="text-indigo-600 text-sm font-semibold mt-2"><i class="fas fa-plus"></i> Kompetenz hinzufügen</button>
+                    `<div onclick="app.showThemeEditor('${t.id}')" class="bg-white p-4 border rounded mb-3 border-l-4 border-l-indigo-500 cursor-pointer hover:shadow-md hover:border-indigo-400 transition group flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-lg group-hover:text-indigo-600 transition">${t.name}</h4>
+                            <p class="text-sm text-slate-500">${t.competencies.length} Kompetenzen hinterlegt</p>
+                        </div>
+                        <i class="fas fa-chevron-right text-slate-300 group-hover:text-indigo-500"></i>
                     </div>`
                 ).join('');
 
@@ -461,39 +446,221 @@
 
                         <!-- Rechte Spalte: Themen/Sequenzen -->
                         <div class="bg-slate-100 p-6 rounded-xl border border-slate-200">
-                            <h2 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-book mr-2"></i> Sequenzen & Aufgaben</h2>
+                            <h2 class="text-xl font-bold mb-4 text-slate-800"><i class="fas fa-book mr-2"></i> Sequenzen (Themen)</h2>
                             <div class="mb-4 flex gap-2">
                                 <input type="text" id="new-theme-name" placeholder="Neue Sequenz (z.B. Geometrie)" class="flex-1 p-2 border rounded outline-none">
                                 <button onclick="app.addTheme()" class="bg-indigo-600 text-white px-4 rounded hover:bg-indigo-700"><i class="fas fa-plus"></i> Erstellen</button>
                             </div>
                             <div class="max-h-96 overflow-y-auto pr-2">
+                                <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide font-semibold">Klicke auf eine Sequenz zum Bearbeiten:</p>
                                 ${themesHTML || '<p class="text-slate-500 text-sm">Keine Sequenzen angelegt.</p>'}
                             </div>
                         </div>
 
-                        <!-- Unten: GitHub Settings -->
-                        <div class="col-span-1 md:col-span-2 bg-slate-800 text-slate-100 p-6 rounded-xl shadow-inner mt-4">
-                            <h2 class="text-xl font-bold mb-4"><i class="fab fa-github mr-2"></i> Cloud Speicher (GitHub API)</h2>
-                            <p class="text-sm text-slate-400 mb-4">Verbinde ein GitHub Repository, um die Daten dauerhaft zu speichern. Bleiben die Felder leer, wird nur lokal im Browser gespeichert.</p>
+                        <!-- Unten: GitHub Settings (Minimiert) -->
+                        <div class="col-span-1 md:col-span-2 bg-slate-800 text-slate-100 rounded-xl shadow-inner mt-4 overflow-hidden border border-slate-700">
+                            <button onclick="document.getElementById('gh-settings-body').classList.toggle('hidden'); document.getElementById('gh-chevron').classList.toggle('rotate-180')" class="w-full text-left p-4 font-bold flex justify-between items-center hover:bg-slate-700 transition">
+                                <span class="flex items-center gap-2"><i class="fab fa-github text-xl"></i> Cloud Speicher & Datenbank (GitHub)</span>
+                                <i id="gh-chevron" class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </button>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Personal Access Token (PAT)</label>
-                                    <input type="password" id="gh-token" value="${state.githubConfig.token}" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                            <div id="gh-settings-body" class="hidden p-6 pt-2 bg-slate-800 border-t border-slate-700">
+                                <p class="text-sm text-slate-400 mb-4 mt-2">Die App ist bereits vorkonfiguriert und speichert automatisch ins Repository.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div>
+                                        <label class="block text-xs text-slate-400 mb-1">Personal Access Token (PAT)</label>
+                                        <input type="password" id="gh-token" value="${state.githubConfig.token}" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-400 mb-1">Repository Owner (Username)</label>
+                                        <input type="text" id="gh-owner" value="${state.githubConfig.owner}" placeholder="z.B. maxmustermann" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-slate-400 mb-1">Repository Name</label>
+                                        <input type="text" id="gh-repo" value="${state.githubConfig.repo}" placeholder="z.B. lern-tracker-data" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Repository Owner (Username)</label>
-                                    <input type="text" id="gh-owner" value="${state.githubConfig.owner}" placeholder="z.B. maxmustermann" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
-                                </div>
-                                <div>
-                                    <label class="block text-xs text-slate-400 mb-1">Repository Name</label>
-                                    <input type="text" id="gh-repo" value="${state.githubConfig.repo}" placeholder="z.B. lern-tracker-data" class="w-full p-2 rounded bg-slate-700 border border-slate-600 text-white outline-none focus:border-indigo-500">
-                                </div>
+                                <button onclick="app.saveGithubConfig()" class="bg-indigo-500 text-white px-6 py-2 rounded font-bold hover:bg-indigo-600 transition shadow">Verbindung testen & Speichern</button>
                             </div>
-                            <button onclick="app.saveGithubConfig()" class="bg-indigo-500 text-white px-6 py-2 rounded font-bold hover:bg-indigo-600 transition shadow">Verbindung speichern & Testen</button>
                         </div>
                     </div>
                 `);
+            },
+
+            // --- EDITOR: SEQUENZ (THEMA) ---
+            showThemeEditor: (themeId) => {
+                const theme = state.db.themes.find(t => t.id === themeId);
+                if (!theme) return app.showAdmin();
+
+                let compsHTML = theme.competencies.map(c => `
+                    <div onclick="app.showCompEditor('${themeId}', '${c.id}')" class="bg-white p-4 border rounded mb-2 flex justify-between items-center cursor-pointer hover:border-indigo-400 hover:shadow-md transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border-2 border-slate-300 group-hover:border-indigo-400">
+                                <i class="fas fa-comment-dots text-slate-400 group-hover:text-indigo-500"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-700 group-hover:text-indigo-600">${c.name}</h4>
+                                <p class="text-xs text-slate-500">${c.tasks ? c.tasks.length : 0} Aufgaben</p>
+                            </div>
+                        </div>
+                        <i class="fas fa-pen text-slate-300 group-hover:text-indigo-500"></i>
+                    </div>
+                `).join('');
+
+                ui.render(`
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-6 border-b pb-4">
+                            <div class="flex items-center gap-4">
+                                <button onclick="app.showAdmin()" class="text-slate-500 hover:text-indigo-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                                <h2 class="text-2xl font-bold text-slate-800">Sequenz bearbeiten: <span class="text-indigo-600">${theme.name}</span></h2>
+                            </div>
+                            <button onclick="app.deleteTheme('${themeId}')" class="text-red-500 hover:text-red-700 text-sm font-semibold"><i class="fas fa-trash mr-1"></i> Sequenz löschen</button>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <h3 class="text-lg font-bold mb-3"><i class="fas fa-cubes mr-2"></i> Kompetenzen (Sprechblasen)</h3>
+                                <p class="text-sm text-slate-500 mb-4">Lege hier die einzelnen Lernziele/Kompetenzen an, die als Sprechblase angezeigt werden sollen.</p>
+                                <div class="flex gap-2 mb-4">
+                                    <input type="text" id="new-comp-name" placeholder="Name der Kompetenz" class="flex-1 p-2 border rounded outline-none">
+                                    <button onclick="app.addCompetency('${themeId}')" class="bg-indigo-600 text-white px-4 rounded hover:bg-indigo-700"><i class="fas fa-plus"></i> Hinzufügen</button>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Vorhandene Kompetenzen:</h3>
+                                <div class="max-h-[400px] overflow-y-auto pr-2">
+                                    ${compsHTML || '<p class="text-slate-500 italic text-sm">Noch keine Kompetenzen angelegt.</p>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            },
+
+            addCompetency: async (themeId) => {
+                const n = document.getElementById('new-comp-name').value.trim();
+                if (!n) return;
+                const theme = state.db.themes.find(t => t.id === themeId);
+                theme.competencies.push({ id: 'comp_' + Date.now(), name: n, tasks: [] });
+                await dbHelper.saveToGithub();
+                app.showThemeEditor(themeId);
+            },
+
+            // --- EDITOR: KOMPETENZ & AUFGABEN ---
+            showCompEditor: (themeId, compId) => {
+                const theme = state.db.themes.find(t => t.id === themeId);
+                const comp = theme.competencies.find(c => c.id === compId);
+                if (!comp) return app.showThemeEditor(themeId);
+
+                if (!comp.tasks) comp.tasks = [];
+
+                let tasksHTML = comp.tasks.map((t, idx) => {
+                    let badge = t.type === 'mc' ? '<span class="bg-blue-100 text-blue-800 text-[10px] px-2 py-1 rounded font-bold ml-2">MULTIPLE CHOICE</span>' : '<span class="bg-gray-100 text-gray-800 text-[10px] px-2 py-1 rounded font-bold ml-2">FREITEXT</span>';
+                    let optsInfo = t.type === 'mc' && t.options ? `<p class="text-xs text-slate-500 mt-1">Auswahl: ${t.options.join(', ')}</p>` : '';
+                    
+                    return `
+                    <div class="bg-white p-4 border rounded mb-3 shadow-sm relative">
+                        <button onclick="app.deleteTask('${themeId}', '${compId}', '${t.id}')" class="absolute top-3 right-3 text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                        <h4 class="font-bold text-slate-700 text-sm mb-1">Aufgabe ${idx + 1} ${badge}</h4>
+                        <p class="text-slate-800 font-medium">${t.q}</p>
+                        ${optsInfo}
+                        <p class="text-sm mt-2"><span class="text-green-600 font-bold"><i class="fas fa-check"></i> Richtige Lösung:</span> ${t.a}</p>
+                    </div>`;
+                }).join('');
+
+                ui.render(`
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <div class="flex items-center justify-between mb-6 border-b pb-4">
+                            <div class="flex items-center gap-4">
+                                <button onclick="app.showThemeEditor('${themeId}')" class="text-slate-500 hover:text-indigo-600"><i class="fas fa-arrow-left text-xl"></i></button>
+                                <h2 class="text-xl font-bold text-slate-800">Aufgaben für: <span class="text-indigo-600">${comp.name}</span></h2>
+                            </div>
+                            <button onclick="app.deleteCompetency('${themeId}', '${compId}')" class="text-red-500 hover:text-red-700 text-sm font-semibold"><i class="fas fa-trash mr-1"></i> Kompetenz löschen</button>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Linke Spalte: Aufgabe erstellen Formular -->
+                            <div class="bg-white p-5 rounded-lg shadow-sm border border-slate-200 h-fit">
+                                <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">Neue Aufgabe hinzufügen</h3>
+                                
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Typ der Aufgabe</label>
+                                <select id="task-type" class="w-full p-2 border rounded outline-none mb-4 bg-slate-50" onchange="document.getElementById('mc-options-container').style.display = (this.value === 'mc') ? 'block' : 'none'">
+                                    <option value="text">Freitext (Schüler tippt Antwort)</option>
+                                    <option value="mc">Multiple Choice (Auswahlmöglichkeiten)</option>
+                                </select>
+
+                                <label class="block text-sm font-semibold text-slate-600 mb-1">Frage</label>
+                                <input type="text" id="task-q" placeholder="z.B. Was ist die Hauptstadt von Frankreich?" class="w-full p-2 border rounded outline-none mb-4">
+
+                                <label class="block text-sm font-semibold text-slate-600 mb-1 text-green-700">Die richtige Antwort</label>
+                                <input type="text" id="task-a" placeholder="z.B. Paris" class="w-full p-2 border-2 border-green-200 rounded outline-none mb-4 focus:border-green-500">
+
+                                <div id="mc-options-container" style="display: none;" class="mb-4 bg-blue-50 p-3 rounded border border-blue-100">
+                                    <label class="block text-sm font-semibold text-blue-800 mb-1">Falsche Antwortmöglichkeiten (mit Komma trennen)</label>
+                                    <input type="text" id="task-opts" placeholder="z.B. Berlin, London, Rom" class="w-full p-2 border rounded outline-none text-sm">
+                                    <p class="text-xs text-blue-600 mt-1">Die korrekte Antwort wird automatisch eingemischt.</p>
+                                </div>
+
+                                <button onclick="app.addTask('${themeId}', '${compId}')" class="w-full bg-indigo-600 text-white font-bold py-2 rounded hover:bg-indigo-700 transition"><i class="fas fa-save mr-1"></i> Aufgabe speichern</button>
+                            </div>
+
+                            <!-- Rechte Spalte: Vorhandene Aufgaben -->
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3 flex justify-between">
+                                    Gespeicherte Aufgaben 
+                                    <span class="bg-indigo-100 text-indigo-800 px-2 rounded-full text-xs">${comp.tasks.length}</span>
+                                </h3>
+                                <div class="max-h-[500px] overflow-y-auto pr-2">
+                                    ${tasksHTML || '<div class="text-center p-8 bg-slate-100 rounded-lg text-slate-400 italic">Noch keine Aufgaben.<br>Nutze das Formular links!</div>'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            },
+
+            deleteCompetency: async (themeId, compId) => {
+                if(!confirm("Kompetenz wirklich löschen?")) return;
+                const theme = state.db.themes.find(t => t.id === themeId);
+                theme.competencies = theme.competencies.filter(c => c.id !== compId);
+                await dbHelper.saveToGithub();
+                app.showThemeEditor(themeId);
+            },
+
+            addTask: async (themeId, compId) => {
+                const type = document.getElementById('task-type').value;
+                const q = document.getElementById('task-q').value.trim();
+                const a = document.getElementById('task-a').value.trim();
+                
+                if (!q || !a) return ui.showMessage("Fehler", "Frage und richtige Antwort müssen ausgefüllt sein.", "error");
+
+                let newTask = { id: 't_' + Date.now(), type: type, q: q, a: a };
+
+                if (type === 'mc') {
+                    const optsRaw = document.getElementById('task-opts').value;
+                    if (!optsRaw) return ui.showMessage("Fehler", "Bitte bei Multiple Choice mindestens eine falsche Antwort angeben.", "error");
+                    
+                    let optionsArray = optsRaw.split(',').map(s => s.trim()).filter(s => s !== "");
+                    optionsArray.push(a);
+                    
+                    newTask.options = optionsArray.sort(() => Math.random() - 0.5);
+                }
+
+                const theme = state.db.themes.find(t => t.id === themeId);
+                const comp = theme.competencies.find(c => c.id === compId);
+                comp.tasks.push(newTask);
+
+                await dbHelper.saveToGithub();
+                ui.showMessage("Gespeichert", "Aufgabe hinzugefügt.", "success");
+                app.showCompEditor(themeId, compId); 
+            },
+
+            deleteTask: async (themeId, compId, taskId) => {
+                const theme = state.db.themes.find(t => t.id === themeId);
+                const comp = theme.competencies.find(c => c.id === compId);
+                comp.tasks = comp.tasks.filter(t => t.id !== taskId);
+                await dbHelper.saveToGithub();
+                app.showCompEditor(themeId, compId);
             },
 
             addStudent: async () => {
@@ -526,30 +693,10 @@
             },
 
             deleteTheme: async (id) => {
+                if(!confirm("Ganze Sequenz wirklich löschen?")) return;
                 state.db.themes = state.db.themes.filter(t => t.id !== id);
                 await dbHelper.saveToGithub();
                 app.showAdmin();
-            },
-
-            addCompetencyPrompt: async (themeId) => {
-                // In einer echten App wäre das ein Modal, hier der Einfachheit halber per Prompt
-                const compName = prompt("Name der neuen Kompetenz (Sprechblase):");
-                if (!compName) return;
-                
-                const theme = state.db.themes.find(t => t.id === themeId);
-                const newComp = { id: 'comp_' + Date.now(), name: compName, tasks: [] };
-                
-                // Direkt eine Aufgabe abfragen
-                const q = prompt(`Erste Aufgabe für "${compName}":\nFrage:`);
-                if(q) {
-                    const a = prompt(`Lösung für "${q}":`);
-                    if(a) newComp.tasks.push({ q, a });
-                }
-
-                theme.competencies.push(newComp);
-                await dbHelper.saveToGithub();
-                app.showAdmin();
-                ui.showMessage("Gespeichert", "Kompetenz wurde hinzugefügt.", "success");
             },
 
             saveGithubConfig: async () => {
@@ -567,16 +714,15 @@
 
                 if (token && owner && repo) {
                     ui.showMessage("Verbinde...", "Prüfe GitHub Verbindung", "info");
-                    await dbHelper.loadFromGithub(); // Test load
+                    await dbHelper.loadFromGithub(); 
                 } else {
                     ui.showMessage("Info", "Lokaler Speichermodus aktiv.", "info");
                 }
             },
 
-
             // --- STUDENT VIEWS ---
             showDashboard: () => {
-                if (state.currentUser?.type !== 'student') return app.showLogin();
+                if (!state.currentUser || state.currentUser.type !== 'student') return app.showLogin();
 
                 let themesHTML = state.db.themes.map(t => `
                     <div onclick="app.showCompetencies('${t.id}')" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 cursor-pointer hover:shadow-md hover:border-indigo-300 transition-all group">
@@ -609,7 +755,7 @@
             showCompetencies: (themeId) => {
                 state.activeThemeId = themeId;
                 const theme = state.db.themes.find(t => t.id === themeId);
-                const userResults = state.db.results[state.currentUser.username]?.[themeId] || {};
+                const userResults = (state.db.results[state.currentUser.username] && state.db.results[state.currentUser.username][themeId]) ? state.db.results[state.currentUser.username][themeId] : {};
 
                 let bubblesHTML = theme.competencies.map(c => {
                     const result = userResults[c.id];
@@ -618,18 +764,15 @@
                     let stripeClass = '';
                     
                     if (result && result.attempts > 0) {
-                        // 1. Umrandung basiert auf dem ERSTEN Versuch (Vorwissen)
                         let initialScore = (result.history && result.history.length > 0) ? result.history[0] : result.score;
                         if (initialScore < 40) borderClass = 'border-red';
                         else if (initialScore >= 40 && initialScore < 80) borderClass = 'border-yellow';
                         else borderClass = 'border-green';
 
-                        // 2. Streifen: Gab es JEMALS einen Versuch zwischen 40% und 80%? (Der Lernweg)
                         let historyArray = result.history || [result.score];
                         let hasIntermediate = historyArray.some(s => s >= 40 && s < 80);
                         if (hasIntermediate) stripeClass = 'with-stripes';
 
-                        // 3. Füllung (Hintergrundfarbe) basiert auf dem AKTUELLEN (letzten) Versuch
                         if (result.score < 40) bgClass = 'bg-state-red';
                         else if (result.score >= 40 && result.score < 80) bgClass = 'bg-state-yellow';
                         else bgClass = 'bg-state-green';
@@ -651,12 +794,10 @@
                         </div>
                     </div>
                     
-                    <!-- Didaktische Legende NEU (3-Teilig) -->
                     <div class="bg-white p-4 rounded-lg shadow-sm border border-slate-100 mb-10 text-sm">
                         <p class="text-center font-bold text-slate-700 mb-3 border-b pb-2">Wie liest man die Sprechblasen?</p>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                             
-                            <!-- Spalte 1: Vorwissen -->
                             <div class="flex flex-col items-center gap-1">
                                 <span class="font-semibold text-slate-500 text-xs">UMRANDUNG (Vorwissen)</span>
                                 <span class="text-[10px] text-slate-400">Erster Versuch</span>
@@ -666,7 +807,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Spalte 2: Lernweg -->
                             <div class="flex flex-col items-center gap-1 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0">
                                 <span class="font-semibold text-slate-500 text-xs">STREIFEN (Lernweg)</span>
                                 <span class="text-[10px] text-slate-400">Zwischenschritt erreicht</span>
@@ -675,7 +815,6 @@
                                 </div>
                             </div>
 
-                            <!-- Spalte 3: Aktuell -->
                             <div class="flex flex-col items-center gap-1 border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0">
                                 <span class="font-semibold text-slate-500 text-xs">FÜLLUNG (Aktuell)</span>
                                 <span class="text-[10px] text-slate-400">Letzter Versuch</span>
@@ -703,12 +842,27 @@
                     return ui.showMessage("Hinweis", "Für diese Kompetenz sind noch keine Aufgaben hinterlegt.", "info");
                 }
 
-                let tasksHTML = comp.tasks.map((task, index) => `
+                let tasksHTML = comp.tasks.map((task, index) => {
+                    let inputArea = '';
+                    
+                    if (task.type === 'mc' && task.options) {
+                        let radioOpts = task.options.map((opt, optIdx) => `
+                            <label class="flex items-center gap-3 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-indigo-50 transition mb-2">
+                                <input type="radio" name="answer_${index}" value="${opt}" class="w-5 h-5 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-slate-700">${opt}</span>
+                            </label>
+                        `).join('');
+                        inputArea = `<div class="mt-4">${radioOpts}</div>`;
+                    } else {
+                        inputArea = `<input type="text" id="answer_${index}" class="w-full mt-4 p-3 border-2 border-slate-100 rounded-lg focus:border-indigo-400 focus:ring-0 outline-none transition" placeholder="Deine Antwort...">`;
+                    }
+
+                    return `
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
-                        <p class="font-semibold text-lg text-slate-800 mb-4"><span class="text-indigo-500 mr-2">Aufgabe ${index + 1}:</span> ${task.q}</p>
-                        <input type="text" id="answer_${index}" class="w-full p-3 border-2 border-slate-100 rounded-lg focus:border-indigo-400 focus:ring-0 outline-none transition" placeholder="Deine Antwort...">
-                    </div>
-                `).join('');
+                        <p class="font-semibold text-lg text-slate-800"><span class="text-indigo-500 mr-2">Aufgabe ${index + 1}:</span> ${task.q}</p>
+                        ${inputArea}
+                    </div>`;
+                }).join('');
 
                 ui.render(`
                     <div class="mb-6 flex items-center">
@@ -718,7 +872,7 @@
 
                     <div class="max-w-2xl mx-auto">
                         ${tasksHTML}
-                        <button onclick="app.evaluateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg mt-4">
+                        <button onclick="app.evaluateQuiz()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition transform hover:-translate-y-1 text-lg mt-6">
                             <i class="fas fa-check-circle mr-2"></i> Antworten Auswerten
                         </button>
                     </div>
@@ -731,9 +885,17 @@
                 
                 let correctCount = 0;
                 
-                // Antworten prüfen
                 comp.tasks.forEach((task, index) => {
-                    const input = document.getElementById(`answer_${index}`).value.trim().toLowerCase();
+                    let input = "";
+                    
+                    if (task.type === 'mc') {
+                        const checkedRadio = document.querySelector(`input[name="answer_${index}"]:checked`);
+                        if(checkedRadio) input = checkedRadio.value.trim().toLowerCase();
+                    } else {
+                        const textInput = document.getElementById(`answer_${index}`);
+                        if(textInput) input = textInput.value.trim().toLowerCase();
+                    }
+
                     const correctAns = task.a.trim().toLowerCase();
                     if (input === correctAns) {
                         correctCount++;
@@ -742,29 +904,24 @@
 
                 const percentage = Math.round((correctCount / comp.tasks.length) * 100);
 
-                // Datenstruktur für Ergebnisse initialisieren falls nötig
                 const user = state.currentUser.username;
                 if (!state.db.results[user]) state.db.results[user] = {};
                 if (!state.db.results[user][state.activeThemeId]) state.db.results[user][state.activeThemeId] = {};
                 
                 const currentResult = state.db.results[user][state.activeThemeId][state.activeCompId] || { attempts: 0, score: 0, history: [] };
                 
-                // Rückwärtskompatibilität: Falls es alte Daten gibt, bei denen 'history' noch nicht existierte
                 if (!currentResult.history) {
                     currentResult.history = currentResult.attempts > 0 ? [currentResult.score] : [];
                 }
 
-                // Ergebnis speichern (Verlauf aktualisieren)
                 currentResult.history.push(percentage);
-                currentResult.score = percentage; // Aktuellsten Score merken
+                currentResult.score = percentage;
                 currentResult.attempts += 1;
                 
                 state.db.results[user][state.activeThemeId][state.activeCompId] = currentResult;
 
-                // Speichern (Lokal + GitHub)
                 await dbHelper.saveToGithub();
 
-                // Feedback UI
                 let feedbackMsg = "";
                 let type = "info";
                 if (percentage >= 80) { feedbackMsg = "Hervorragend! Die Füllung ist jetzt grün!"; type = "success"; }
@@ -773,7 +930,6 @@
 
                 ui.showMessage(`${percentage}% Richtig`, feedbackMsg, type);
                 
-                // Zurück zur Kompetenz-Ansicht um den Farbwechsel zu sehen
                 setTimeout(() => {
                     app.showCompetencies(state.activeThemeId);
                 }, 1500);
