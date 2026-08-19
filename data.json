@@ -123,16 +123,6 @@
               "a": "Application"
             }
           ]
-        },
-        {
-          "id": "comp_1787160022543",
-          "name": "Unterrichtsort",
-          "tasks": [
-            {
-              "q": "Übersetze: Klassenzimmer",
-              "a": "Classroom"
-            }
-          ]
         }
       ]
     }
