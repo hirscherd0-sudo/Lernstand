@@ -74,7 +74,13 @@
     {
       "id": "theme_1787159803831",
       "name": "Englisch Abteilung 5",
-      "competencies": []
+      "competencies": [
+        {
+          "id": "comp_1787159823032",
+          "name": "Übersetze: head of department",
+          "tasks": []
+        }
+      ]
     }
   ],
   "results": {
