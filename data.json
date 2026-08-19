@@ -74,7 +74,18 @@
     {
       "id": "theme_1787159841868",
       "name": "Englisch Abteilung 5",
-      "competencies": []
+      "competencies": [
+        {
+          "id": "comp_1787159860752",
+          "name": "Organisation",
+          "tasks": [
+            {
+              "q": "head of department",
+              "a": "Abteilungsleiter"
+            }
+          ]
+        }
+      ]
     }
   ],
   "results": {
