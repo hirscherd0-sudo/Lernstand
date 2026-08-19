@@ -115,6 +115,12 @@
               "type": "text",
               "q": "Zeugnis",
               "a": "Certificate"
+            },
+            {
+              "id": "t_1787161688854",
+              "type": "text",
+              "q": "Übersetze: Bewerbung",
+              "a": "Application"
             }
           ]
         },
