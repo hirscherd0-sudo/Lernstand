@@ -109,6 +109,12 @@
             {
               "q": "Übersetze: Verwaltung",
               "a": "Administration"
+            },
+            {
+              "id": "t_1787161603553",
+              "type": "text",
+              "q": "Zeugnis",
+              "a": "Certificate"
             }
           ]
         },
