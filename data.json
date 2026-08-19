@@ -84,6 +84,16 @@
               "a": "Abteilungsleiter"
             }
           ]
+        },
+        {
+          "id": "comp_1787159935236",
+          "name": "Verwaltung",
+          "tasks": [
+            {
+              "q": "Übersetze: Verwaltung",
+              "a": "Administration"
+            }
+          ]
         }
       ]
     }
