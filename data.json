@@ -137,7 +137,19 @@
         {
           "id": "comp_1787218000821",
           "name": "Grundbegriffe",
-          "tasks": []
+          "tasks": [
+            {
+              "id": "t_1787218064180",
+              "type": "mc",
+              "q": "Was ist kein Grundbegriff",
+              "a": "Grundwert",
+              "options": [
+                "Zinsatz",
+                "Kapital",
+                "Grundwert"
+              ]
+            }
+          ]
         }
       ]
     }
