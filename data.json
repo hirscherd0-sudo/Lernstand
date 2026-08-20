@@ -133,7 +133,13 @@
     {
       "id": "theme_1787217941668",
       "name": "Prozentrechnen",
-      "competencies": []
+      "competencies": [
+        {
+          "id": "comp_1787218000821",
+          "name": "Grundbegriffe",
+          "tasks": []
+        }
+      ]
     }
   ],
   "results": {
